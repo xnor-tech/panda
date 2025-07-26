@@ -68,48 +68,51 @@ if __name__ == "__main__":
   print("querying addresses ...")
   with tqdm(addrs) as t:
     for addr in t:
-      # skip functional broadcast addrs
-      if addr == 0x7df or addr == 0x18db33f1:
-        continue
-
-      if args.bus:
-        bus = int(args.bus)
-      else:
-        bus = 1
-      rx_addr = addr + int(args.rxoffset, base=16) if args.rxoffset else None
-
-      # Try all sub-addresses for addr. By default, this is None
-      for sub_addr in sub_addrs:
-        sub_addr_str = hex(sub_addr) if sub_addr is not None else None
-        t.set_description(f"{hex(addr)}, {sub_addr_str}")
-        uds_client = UdsClient(panda, addr, rx_addr, bus, sub_addr=sub_addr, timeout=0.2)
-        # Check for anything alive at this address, and switch to the highest
-        # available diagnostic session without security access
-        try:
-          uds_client.tester_present()
-          uds_client.diagnostic_session_control(SESSION_TYPE.DEFAULT)
-          uds_client.diagnostic_session_control(SESSION_TYPE.EXTENDED_DIAGNOSTIC)
-        except NegativeResponseError:
-          pass
-        except MessageTimeoutError:
+      try:
+        # skip functional broadcast addrs
+        if addr == 0x7df or addr == 0x18db33f1:
           continue
-        except InvalidSubAddressError as e:
-          print(f'*** Skipping address {hex(addr)}: {e}')
-          break
 
-        # Run queries against all standard UDS data identifiers, plus selected
-        # non-standardized identifier ranges if requested
-        resp = {}
-        for uds_data_id in sorted(uds_data_ids):
+        if args.bus:
+          bus = int(args.bus)
+        else:
+          bus = 1
+        rx_addr = addr + int(args.rxoffset, base=16) if args.rxoffset else None
+
+        # Try all sub-addresses for addr. By default, this is None
+        for sub_addr in sub_addrs:
+          sub_addr_str = hex(sub_addr) if sub_addr is not None else None
+          t.set_description(f"{hex(addr)}, {sub_addr_str}")
+          uds_client = UdsClient(panda, addr, rx_addr, bus, sub_addr=sub_addr, timeout=0.2)
+          # Check for anything alive at this address, and switch to the highest
+          # available diagnostic session without security access
           try:
-            data = uds_client.read_data_by_identifier(DATA_IDENTIFIER_TYPE(uds_data_id))
-            if data:
-              resp[uds_data_id] = data
-          except (NegativeResponseError, MessageTimeoutError, InvalidSubAddressError):
+            uds_client.tester_present()
+            uds_client.diagnostic_session_control(SESSION_TYPE.DEFAULT)
+            uds_client.diagnostic_session_control(SESSION_TYPE.EXTENDED_DIAGNOSTIC)
+          except NegativeResponseError:
             pass
+          except MessageTimeoutError:
+            continue
+          except InvalidSubAddressError as e:
+            print(f'*** Skipping address {hex(addr)}: {e}')
+            break
 
-        if resp.keys():
-          results[(addr, sub_addr)] = resp
+          # Run queries against all standard UDS data identifiers, plus selected
+          # non-standardized identifier ranges if requested
+          resp = {}
+          for uds_data_id in sorted(uds_data_ids):
+            try:
+              data = uds_client.read_data_by_identifier(DATA_IDENTIFIER_TYPE(uds_data_id))
+              if data:
+                resp[uds_data_id] = data
+            except (NegativeResponseError, MessageTimeoutError, InvalidSubAddressError):
+              pass
+
+          if resp.keys():
+            results[(addr, sub_addr)] = resp
+      except Exception:
+        pass
 
     if len(results.items()):
       for (addr, sub_addr), resp in results.items():
