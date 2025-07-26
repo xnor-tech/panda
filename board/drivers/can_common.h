@@ -214,9 +214,15 @@ void ignition_can_hook(CANPacket_t *to_push) {
 
   // Tesla Model S exception
   if (((bus == 0) || (bus == 1)) && (addr == 0x348) && (len == 8)) {
-    // GTW_status
-    ignition_can = (GET_BYTE(to_push, 0) & 0x1U) != 0U;
-    ignition_can_cnt = 0U;
+     int counter = GET_BYTE(to_push, 6) & 0xFU;
+
+     static int prev_counter_tesla_legacy = -1;
+     if ((counter == ((prev_counter_tesla_legacy + 1) % 16)) && (prev_counter_tesla_legacy != -1)) {
+       // GTW_status
+       ignition_can = (GET_BYTE(to_push, 0) & 0x1U) != 0U;
+       ignition_can_cnt = 0U;
+     }
+     prev_counter_tesla_legacy = counter;
   }
 }
 
