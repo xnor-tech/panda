@@ -85,7 +85,7 @@ static void black_init_bootloader(void) {
 }
 
 static uint32_t black_read_voltage_mV(void){
-  return adc_get_mV(12) * 11U;
+  return adc_get_mV(&(const adc_signal_t) ADC_CHANNEL_DEFAULT(ADC1, 12)) * 11U;
 }
 
 static harness_configuration black_harness_config = {
@@ -97,8 +97,8 @@ static harness_configuration black_harness_config = {
   .pin_SBU2 = 3,
   .pin_relay_SBU1 = 10,
   .pin_relay_SBU2 = 11,
-  .adc_channel_SBU1 = 10,
-  .adc_channel_SBU2 = 13
+  .adc_signal_SBU1 = ADC_CHANNEL_DEFAULT(ADC1, 10),
+  .adc_signal_SBU2 = ADC_CHANNEL_DEFAULT(ADC1, 13)
 };
 
 board board_black = {
