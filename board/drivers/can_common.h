@@ -162,9 +162,10 @@ void can_set_forwarding(uint8_t from, uint8_t to) {
 
 void ignition_can_hook(CANPacket_t *msg) {
   int bus = GET_BUS(msg);
+  int addr = GET_ADDR(msg);
+  int len = GET_LEN(msg);
+
   if (bus == 0) {
-    int addr = GET_ADDR(msg);
-    int len = GET_LEN(msg);
 
     // GM exception
     if ((addr == 0x1F1) && (len == 8)) {
@@ -207,20 +208,19 @@ void ignition_can_hook(CANPacket_t *msg) {
       ignition_can = (msg->data[0] >> 5) == 0x6U;
       ignition_can_cnt = 0U;
     }
-
-    // Tesla Model S exception
-    if (((bus == 0) || (bus == 1)) && (addr == 0x348) && (len == 8)) {
-       int counter = msg->data[6] & 0xFU;
-
-       static int prev_counter_tesla_legacy = -1;
-       if ((counter == ((prev_counter_tesla_legacy + 1) % 16)) && (prev_counter_tesla_legacy != -1)) {
-         // GTW_status
-         ignition_can = (msg->data[0] & 0x1U) != 0U;
-         ignition_can_cnt = 0U;
-       }
-       prev_counter_tesla_legacy = counter;
   }
 
+  // Tesla Model S exception
+  if (((bus == 0) || (bus == 1)) && (addr == 0x348) && (len == 8)) {
+     int counter = msg->data[6] & 0xFU;
+
+     static int prev_counter_tesla_legacy = -1;
+     if ((counter == ((prev_counter_tesla_legacy + 1) % 16)) && (prev_counter_tesla_legacy != -1)) {
+       // GTW_status
+       ignition_can = (msg->data[0] & 0x1U) != 0U;
+       ignition_can_cnt = 0U;
+     }
+     prev_counter_tesla_legacy = counter;
  }
 }
 
