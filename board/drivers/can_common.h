@@ -156,6 +156,8 @@ void can_set_forwarding(uint8_t from, uint8_t to) {
 #endif
 
 void ignition_can_hook(CANPacket_t *msg) {
+  int len = GET_LEN(msg);
+
   if (msg->bus == 0U) {
     int len = GET_LEN(msg);
 
@@ -202,11 +204,24 @@ void ignition_can_hook(CANPacket_t *msg) {
     }
 
     // Volkswagen MEB exception
-    if ((addr == 0x3C0) && (len == 4)) {
+    if ((msg->addr == 0x3C0U) && (len == 4)) {
       ignition_can = GET_BIT(msg, 17U);
       ignition_can_cnt = 0U;
     }
   }
+
+  // Tesla Model S exception
+  if (((msg->bus == 0) || (msg->bus == 1)) && (msg->addr == 0x348U) && (len == 8)) {
+     int counter = msg->data[6] & 0xFU;
+
+     static int prev_counter_tesla_legacy = -1;
+     if ((counter == ((prev_counter_tesla_legacy + 1) % 16)) && (prev_counter_tesla_legacy != -1)) {
+       // GTW_status
+       ignition_can = (msg->data[0] & 0x1U) != 0U;
+       ignition_can_cnt = 0U;
+     }
+     prev_counter_tesla_legacy = counter;
+ }
 }
 
 bool can_tx_check_min_slots_free(uint32_t min) {
