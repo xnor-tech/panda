@@ -131,6 +131,8 @@ class Panda:
 
   # from https://github.com/commaai/openpilot/blob/103b4df18cbc38f4129555ab8b15824d1a672bdf/cereal/log.capnp#L648
   HW_TYPE_UNKNOWN = b'\x00'
+  HW_TYPE_WHITE = b'\x01'
+  HW_TYPE_BLACK = b'\x03'
   HW_TYPE_RED_PANDA = b'\x07'
   HW_TYPE_TRES = b'\x09'
   HW_TYPE_CUATRO = b'\x0a'
@@ -141,6 +143,7 @@ class Panda:
   HEALTH_STRUCT = _parse_c_struct(os.path.join(BASEDIR, "board/health.h"), "health_t")
   CAN_HEALTH_STRUCT = struct.Struct("<BIBBBBBBBBIIIIIIIHHBBBIIII")
 
+  F4_DEVICES = [HW_TYPE_WHITE, HW_TYPE_BLACK]
   H7_DEVICES = [HW_TYPE_RED_PANDA, HW_TYPE_TRES, HW_TYPE_CUATRO, HW_TYPE_BODY]
   SUPPORTED_DEVICES = H7_DEVICES
 
@@ -221,6 +224,10 @@ class Panda:
     self._handle_open = True
     self.health_version, self.can_version = self.get_packets_versions()
     logger.debug("connected")
+
+    hw_type = self.get_type()
+    if hw_type not in self.SUPPORTED_DEVICES:
+      print("WARNING: Using deprecated HW")
 
     # disable openpilot's heartbeat checks
     if self._disable_checks:
@@ -348,9 +355,6 @@ class Panda:
     return []
 
   def reset(self, enter_bootstub=False, enter_bootloader=False, reconnect=True):
-    if enter_bootstub or enter_bootloader:
-      assert (hw_type := self.get_type()) in self.SUPPORTED_DEVICES, f"Unknown HW: {hw_type}"
-
     # no response is expected since it resets right away
     timeout = 5000 if isinstance(self._handle, PandaSpiHandle) else 15000
     try:
@@ -430,7 +434,9 @@ class Panda:
       pass
 
   def flash(self, fn=None, code=None, reconnect=True):
-    assert (hw_type := self.get_type()) in self.SUPPORTED_DEVICES, f"Unknown HW: {hw_type}"
+    hw_type = self.get_type()
+    if hw_type not in self.SUPPORTED_DEVICES:
+      raise RuntimeError(f"HW type {hw_type.hex()} is deprecated and can no longer be flashed.")
 
     if self.up_to_date(fn=fn):
       logger.info("flash: already up to date")
