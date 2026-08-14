@@ -40,9 +40,9 @@ F4Config = McuConfig(
   0x800,
   0x1FFF79C0,
   0x8004000,
-  "panda.bin.signed",
+  "panda_f4.bin.signed",
   0x8000000,
-  "bootstub.panda.bin",
+  "bootstub.panda_f4.bin",
 )
 
 

@@ -145,7 +145,7 @@ class Panda:
 
   F4_DEVICES = [HW_TYPE_WHITE, HW_TYPE_BLACK]
   H7_DEVICES = [HW_TYPE_RED_PANDA, HW_TYPE_TRES, HW_TYPE_CUATRO, HW_TYPE_BODY]
-  SUPPORTED_DEVICES = H7_DEVICES
+  SUPPORTED_DEVICES = H7_DEVICES + F4_DEVICES
 
   INTERNAL_DEVICES = (HW_TYPE_TRES, HW_TYPE_CUATRO)
 
@@ -433,6 +433,9 @@ class Panda:
     except Exception:
       pass
 
+  def get_mcu_type(self) -> McuType:
+    return McuType.F4 if self.get_type() in Panda.F4_DEVICES else McuType.H7
+
   def flash(self, fn=None, code=None, reconnect=True):
     hw_type = self.get_type()
     if hw_type not in self.SUPPORTED_DEVICES:
@@ -443,7 +446,7 @@ class Panda:
       return
 
     if not fn:
-      fn = os.path.join(FW_PATH, McuType.H7.config.app_fn)
+      fn = os.path.join(FW_PATH, self.get_mcu_type().config.app_fn)
     assert os.path.isfile(fn)
     logger.debug("flash: main version is %s", self.get_version())
     if not self.bootstub:
@@ -458,7 +461,7 @@ class Panda:
     logger.debug("flash: bootstub version is %s", self.get_version())
 
     # do flash
-    Panda.flash_static(self._handle, code, mcu_type=McuType.H7)
+    Panda.flash_static(self._handle, code, mcu_type=self.get_mcu_type())
 
     # reconnect
     if reconnect:
@@ -509,7 +512,7 @@ class Panda:
   def up_to_date(self, fn=None) -> bool:
     current = self.get_signature()
     if fn is None:
-      fn = os.path.join(FW_PATH, McuType.H7.config.app_fn)
+      fn = os.path.join(FW_PATH, self.get_mcu_type().config.app_fn)
     expected = Panda.get_signature_from_firmware(fn)
     return (current == expected)
 

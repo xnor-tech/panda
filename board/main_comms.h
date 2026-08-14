@@ -28,7 +28,9 @@ static int get_health_pkt(void *dat) {
   health->heartbeat_lost_pkt = heartbeat_lost;
   health->safety_rx_checks_invalid_pkt = safety_rx_checks_invalid;
 
+#ifndef STM32F4
   health->spi_error_count_pkt = spi_error_count;
+#endif
 
   health->fault_status_pkt = fault_status;
   health->faults_pkt = faults;
@@ -42,9 +44,13 @@ static int get_health_pkt(void *dat) {
 
   health->som_reset_triggered = bootkick_reset_triggered;
 
+#ifdef STM32H7
   health->sound_output_level_pkt = sound_output_level;
-
   health->temperature = dts_get_temperature();
+#else
+  health->sound_output_level_pkt = 0U;
+  health->temperature = 0.0f;
+#endif
 
   return sizeof(*health);
 }
