@@ -19,7 +19,7 @@ bool can_set_speed(uint8_t can_number) {
     CANx,
     bus_config[bus_number].can_speed,
     can_loopback,
-    (unsigned int)(can_silent) & (1U << can_number)
+    can_silent
   );
   return ret;
 }

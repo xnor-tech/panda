@@ -132,9 +132,7 @@ extern uint8_t can_irq_number[CAN_IRQS_ARRAY_SIZE][CAN_IRQS_ARRAY_SIZE];
 bool can_set_speed(uint8_t can_number);
 void can_clear_send(CAN_TypeDef *CANx, uint8_t can_number);
 void update_can_health_pkt(uint8_t can_number, uint32_t ir_reg);
-void process_can(uint8_t can_number);
 void can_rx(uint8_t can_number);
-bool can_init(uint8_t can_number);
 
 #endif // STM32H7
 
